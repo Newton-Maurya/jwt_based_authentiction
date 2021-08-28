@@ -105,13 +105,15 @@ const logAuth = async function (req, res, next){
     }
 }
 
+// Deleting product
 const delAuth = async function (req, res, next){
     try{
+        const proID = req.params.id;
         const token = await jwt.verify(req.cookies.jwt_token, process.env.SECRETE_KEY);
         const userID = token._id;
         let result;
         if(userID === "6127d4a9f9fa56e8feaf63a3"){
-            result = await Products.findByIdAndDelete({_id: userID});
+            result = await Products.findByIdAndDelete({_id: proID});
             req.productList = result;
             next()
         }
@@ -122,6 +124,28 @@ const delAuth = async function (req, res, next){
     catch(err){
         res.sendStatus(403);
     }
+}
+
+// Updating product details
+const updateAuth = function (){
+    try{
+        const proID = req.params.id;
+        const token = await jwt.verify(req.cookies.jwt_token, process.env.SECRETE_KEY);
+        const userID = token._id;
+        let result;
+        if(userID === "6127d4a9f9fa56e8feaf63a3"){
+            result = await Products.findByIdAndUpdate({_id: proID}, {$set:{name: req.body.name, price: req.body.price}}, {new: true});
+            req.productList = result;
+            next()
+        }
+        else{
+            req.status(403).send('Bad credidential')
+        }
+    }
+    catch(err){
+        res.sendStatus(403);
+    }
+
 }
 
 app.post('/register', newAutherization, (req, res) => {
@@ -135,10 +159,14 @@ app.post('/adminLogin', logAuth, (req, res)=>{
     }).status(201).send(req.proList)
 })
 
-app.delete('/delete/:id', delAuth, (req, res) => {
+app.delete('/api/delete/:id', delAuth, (req, res) => {
     res.status(201).send(req.productList)
 })
 
+// Updating product
+app.put('/api/update/:id', updateAuth, (req, res) => {
+    res.status(200).send(JSON.stringify({productList: req.proList}));
+})
 // listening
 app.listen(4580, () => {
     console.log('Server running on port 4580');
