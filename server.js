@@ -54,11 +54,14 @@ const newAutherization = async function (req, res, next) {
     catch(err){
         console.log(err);
         res.status(401).send('error')
+        next()
+
     }
 
 }
 
 const logAuth = async function (req, res, next){
+    console.log(req.body);
     try{
         if(req.body.email === 'newtonmauryadw@gmail.com'){
             // console.log(req.body.email);
@@ -74,10 +77,14 @@ const logAuth = async function (req, res, next){
                 req.auth = result;
                 req.proList = productsList;
                 req.token = token
+                console.log(token);
                 next()
             }
             else{
-                res.status(403).send(json({error: 'Wrong email id or password'}))
+                req.auth = result;
+                res.sendStatus(401)
+                next();
+
             }
         }
         else{
@@ -96,12 +103,14 @@ const logAuth = async function (req, res, next){
                 next()
             }
             else{
-                res.status(403).send(json({error: 'Wrong email id or password'}))
+                res.sendStatus(401)
+                next()
             }
         }
     }
     catch(err){
-        res.status(500).send(json(err))
+        res.sendStatus(500)
+        next()
     }
 }
 
@@ -119,15 +128,19 @@ const delAuth = async function (req, res, next){
         }
         else{
             req.status(403).send('You are not admin')
+            next()
+
         }
     }
     catch(err){
         res.sendStatus(403);
+        next()
+
     }
 }
 
 // Updating product details
-const updateAuth = function (){
+const updateAuth = async function (){
     try{
         const proID = req.params.id;
         const token = await jwt.verify(req.cookies.jwt_token, process.env.SECRETE_KEY);
@@ -140,10 +153,14 @@ const updateAuth = function (){
         }
         else{
             req.status(403).send('Bad credidential')
+            next()
+
         }
     }
     catch(err){
         res.sendStatus(403);
+        next()
+
     }
 
 }
@@ -153,10 +170,14 @@ app.post('/register', newAutherization, (req, res) => {
         httpOnly:true
     }).status(201).send(req.list)
 })
-app.post('/adminLogin', logAuth, (req, res)=>{
-    res.cookie('jwt_token', req.token, {
-        httpOnly:true
-    }).status(201).send(req.proList)
+app.post('/login', logAuth, (req, res)=>{
+
+    // console.log(req.body);
+    if(req.auth){
+        res.cookie('jwt_token', req.token, {
+            httpOnly:true
+        }).status(201).send(req.proList)
+    }
 })
 
 app.delete('/api/delete/:id', delAuth, (req, res) => {
